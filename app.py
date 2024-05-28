@@ -21,6 +21,8 @@ if ft != "mysql":
 else:
     uploaded_file = None
 
+db = None
+
 if uploaded_file is not None or ft == "mysql":
     file_path = uploaded_file
 
@@ -84,17 +86,22 @@ if uploaded_file is not None or ft == "mysql":
 
         elif ft == "mysql":
             try:
+                global db
                 db = MySQLExecutor(database_name, user, db_passwd, host, int(port))
                 res = db.read(table_name, 0)
                 data = pd.DataFrame(res)
                 data.set_index("index", inplace=True, drop=True)
+                faq_data = db.read("faq", 0)
+                faq_data = pd.DataFrame(faq_data)
+                faq_data.set_index("index", inplace=True, drop=True)
             except Exception as e:
-                st.warning("[check your db password.]", icon="⚠️")
+                warn = "build dataset('$ python build_dataset.py') or check your db password"
+                st.warning(f"{warn}", icon="⚠️")
                 st.stop()
 
-        return data
+        return data, faq_data
 
-    data = load_data(file_path, ft, sh, h)
+    data, faq_data = load_data(file_path, ft, sh, h)
 with tab1:
 
     st.write("### 1. Dataset Preview ")
@@ -150,12 +157,9 @@ with tab1:
         st.dataframe(vc, use_container_width=True)
 
     else:
-        st.write("###### The data has the dimensions :", data.shape)
+        st.write("###### Data shape :", data.shape)
 
-    # vis_select = st.sidebar.checkbox(
-    #     "**C) Is visualisation required for this dataset?**"
-    # )
-    st.sidebar.write("****C) Click Visualize****")
+    st.sidebar.write("****C) Click to Visualize****")
     vis_select = st.sidebar.button("Visualize")
 
     if vis_select:
@@ -212,3 +216,4 @@ with tab2:
 
 with tab3:
     st.write("### FAQ")
+    st.dataframe(faq_data)

@@ -1,4 +1,5 @@
 import datetime
+import time
 from typing import Any, List
 from urllib.parse import quote_plus
 
@@ -21,9 +22,15 @@ class Crawler:
 
         self.chrome_options = webdriver.ChromeOptions()
         self.chrome_options.add_argument("--incognito")
+        self.chrome_options.add_experimental_option("detach", True)
+        self.chrome_options.add_argument(
+            "--disable-blink-features=AutomationControlled"
+        )
         self.driver = webdriver.Chrome()
 
-        self._dataset = []
+        self._car_info = []
+        self._faq = None
+        self.scroll_pos = 0
 
     def _get_url(self, page=None) -> str:
         """
@@ -141,7 +148,71 @@ class Crawler:
 
         return dataset
 
-    def get(self, page: int = 1):
+    def _get_next_page(self):
+        partP = self.driver.find_element(By.CSS_SELECTOR, ".part.page")
+        current_page = int(partP.find_element(By.CLASS_NAME, "current").text)
+        next_page_elements = partP.find_elements(By.TAG_NAME, "a")
+
+        if current_page < len(next_page_elements):
+            return next_page_elements[current_page]
+        return None
+
+    def get_faq(self):
+        self.driver.get("http://www.encar.com/")
+        time.sleep(2)
+        self.driver.find_element(
+            By.XPATH, "/html/body/div[1]/div[1]/ul[2]/li[3]/a"
+        ).click()
+        self.driver.find_element(
+            By.XPATH, "/html/body/div[1]/div[1]/div[2]/div/div[2]/div[4]/ul/li[2]/a"
+        ).click()
+        time.sleep(2)
+
+        q_lst = []
+        a_lst = []
+
+        for i in range(5):
+            try:
+                self.driver.find_element(
+                    By.XPATH,
+                    f"/html/body/div[1]/div[2]/div[1]/div/form/div[3]/span[2]/a[{i+1}]",
+                ).click()
+                time.sleep(1)
+                try:
+                    for j in range(
+                        40
+                    ):  # 제목이나 사이트 등 더 추가하고 싶다면 여기서 추가 입력
+                        if j % 2 == 0:
+                            time.sleep(1)
+                            q_xpath = f"/html/body/div[1]/div[2]/div[1]/div/form/span/div/ul/li[{j+1}]"
+                            q = self.driver.find_element(By.XPATH, q_xpath).text.strip()
+                            q_lst.append(q)
+                        else:
+                            self.driver.find_element(
+                                By.XPATH,
+                                f"/html/body/div[1]/div[2]/div[1]/div/form/span/div/ul/li[{j}]/a",
+                            ).click()
+                            time.sleep(1)
+                            a_xpath = f'/html/body/div[1]/div[2]/div[1]/div/form/span/div/ul/li[{j+1}]/div[@class="text"]'
+                            a = self.driver.find_element(By.XPATH, a_xpath).text.strip()
+                            a_lst.append(a)
+                except Exception as e:
+                    print(f"{e}")
+                    continue
+
+            except Exception as e:
+                print(f"{e}")
+                continue
+
+        max_len = max(len(q_lst), len(a_lst))
+        q_lst += [""] * (max_len - len(q_lst))
+        a_lst += [""] * (max_len - len(a_lst))
+
+        df = pd.DataFrame({"질문": q_lst, "답변": a_lst})
+
+        self._faq = df
+
+    def get_car_info(self, page: int = 1):
         """
         Retrieves the car data from the web page.
 
@@ -152,14 +223,18 @@ class Crawler:
         source = self._get_source(page)
         soup = BeautifulSoup(source, "html.parser")
         dataset = self.process(soup)
-        self._dataset.append(dataset)
+        self._car_info.append(dataset)
 
     @property
-    def dataset(self):
+    def car_info(self):
         """
         Returns the dataset containing the car data.
 
         Returns:
             dict: The dataset containing the car data.
         """
-        return self._dataset
+        return self._car_info
+
+    @property
+    def faq(self):
+        return self._faq
