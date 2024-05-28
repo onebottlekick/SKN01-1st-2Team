@@ -2,7 +2,10 @@ import sys
 
 import pandas as pd
 import streamlit as st
+import folium
+from folium.plugins import MarkerCluster
 from pygwalker.api.streamlit import StreamlitRenderer
+from streamlit_folium import st_folium
 
 from db import MySQLExecutor
 
@@ -163,6 +166,48 @@ with tab1:
 with tab2:
     # TODO map visualization
     st.write("### 4. Map")
+
+    m = folium.Map(location=[37.56693229959581, 126.97852771817074], zoom_start=7)
+
+    region_coords = {
+        "서울": [37.540705, 126.956764],
+        "경기": [37.567167, 127.190292],
+        "인천": [37.469221, 126.573234],
+        "대전": [36.321655, 127.378953],
+        "세종": [36.5040736, 127.2494855],
+        "충남": [36.557229, 126.779757],
+        "충북": [36.628503, 127.929344],
+        "강원": [37.555837, 128.209315],
+        "부산": [35.198362, 129.053922],
+        "대구": [35.798838, 128.583052],
+        "울산": [35.519301, 129.239078],
+        "경남": [35.259787, 128.664734],
+        "경북": [36.248647, 128.664734],
+        "광주": [35.126033, 126.831302],
+        "전남": [34.819400, 126.893113],
+        "전북": [35.716705, 127.144185],
+        "제주": [33.364805, 126.542671],
+    }
+
+    region_counts = data["지역"].value_counts()
+
+    # 마커 클러스터 생성
+    marker_cluster = folium.plugins.MarkerCluster().add_to(m)
+
+    # 각 지역에 등장 횟수 마커 추가
+    for region, count in region_counts.items():
+        if region in region_coords:
+            folium.Marker(
+                location=region_coords[region],
+                popup=f"{region}: {count}대",
+                tooltip=f"{region}: {count}대",
+                icon=folium.Icon(color="blue"),
+            ).add_to(marker_cluster)
+    st_folium(m, width=700, height=500)
+
+    # m.save("map.html")
+    # st.components.v1.html(open("map.html", "r").read(), height=500)
+
 
 with tab3:
     st.write("### FAQ")
