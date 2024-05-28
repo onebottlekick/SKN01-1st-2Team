@@ -1,6 +1,5 @@
 import pandas as pd
 
-from typing import List
 from crawler import Crawler
 
 
@@ -22,10 +21,8 @@ class Dataset:
     def __init__(self, sleep: int = 10):
         self.crawler = Crawler(sleep)
         self.get_data()
-        car_info = pd.concat([*self.crawler.car_info])
-        faq = self.crawler.faq
-        self.car_info = range(len(car_info.index))
-        self._dataset = car_info, faq
+        self._dataset = pd.concat([*self.crawler.dataset])
+        self._dataset.index = range(len(self._dataset.index))
 
     def get_data(self):
         """
@@ -35,8 +32,7 @@ class Dataset:
 
         """
         for i in range(1, 3):
-            self.crawler.get_car_info(i)
-        self.crawler.get_faq()
+            self.crawler.get(i)
 
     @property
     def dataset(self):
@@ -50,5 +46,5 @@ class Dataset:
         return self._dataset
 
 
-def load_dataset(sleep: int = 10) -> List[pd.DataFrame]:
+def load_dataset(sleep: int = 10) -> pd.DataFrame:
     return Dataset(sleep).dataset
