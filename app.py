@@ -48,7 +48,7 @@ if uploaded_file is not None or ft == "mysql":
         host = st.sidebar.text_input("HOST: ", "127.0.0.1")
         port = st.sidebar.text_input("PORT: ", "3306")
         table_name = st.sidebar.text_input("TABLE: ", "info")
-
+        table_name_faq = st.sidebar.text_input("TABLE: ", "faq")
         db_passwd = None
         db_passwd = st.sidebar.text_input("Enter DB password: ", "", type="password")
         while db_passwd is None:
@@ -84,14 +84,19 @@ if uploaded_file is not None or ft == "mysql":
                 db = MySQLExecutor(database_name, user, db_passwd, host, int(port))
                 res = db.read(table_name, 0)
                 data = pd.DataFrame(res)
+                res = db.read(table_name_faq, 0)
+                data_faq = pd.DataFrame(res)
                 data.set_index("index", inplace=True, drop=True)
+                data_faq.set_index("index", inplace=True, drop=True)
             except Exception as e:
                 st.warning("[check your db password.]", icon="⚠️")
                 st.stop()
 
-        return data
+        return data, data_faq
+    
 
-    data = load_data(file_path, ft, sh, h)
+    data, data_faq = load_data(file_path, ft, sh, h)
+
 with tab1:
 
     st.write("### 1. Dataset Preview ")
@@ -166,3 +171,17 @@ with tab2:
 
 with tab3:
     st.write("### FAQ")
+   
+    # 검색 기능 추가
+    search_term = st.text_input("검색", "")
+
+    # 질문 목록 필터링
+    filtered_data = data_faq[data_faq['질문'].str.contains(search_term, case=False)]
+
+    # 질문 목록 표시
+    st.write("### 1. 질문 목록")
+    for index, row in filtered_data.iterrows():
+        with st.expander(row['질문']):
+            st.write(row['답변'])
+    
+    
