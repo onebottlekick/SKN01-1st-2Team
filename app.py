@@ -92,7 +92,8 @@ if uploaded_file is not None or ft == "mysql":
                 faq_data = pd.DataFrame(faq_data)
                 faq_data.set_index("index", inplace=True, drop=True)
             except Exception as e:
-                st.warning("[check your db password.]", icon="⚠️")
+                warn = "build dataset('$ python build_dataset.py') or check your db password"
+                st.warning(f"{warn}", icon="⚠️")
                 st.stop()
 
         return data, faq_data
@@ -153,12 +154,9 @@ with tab1:
         st.dataframe(vc, use_container_width=True)
 
     else:
-        st.write("###### The data has the dimensions :", data.shape)
+        st.write("###### Data shape :", data.shape)
 
-    # vis_select = st.sidebar.checkbox(
-    #     "**C) Is visualisation required for this dataset?**"
-    # )
-    st.sidebar.write("****C) Click Visualize****")
+    st.sidebar.write("****C) Click to Visualize****")
     vis_select = st.sidebar.button("Visualize")
 
     if vis_select:
