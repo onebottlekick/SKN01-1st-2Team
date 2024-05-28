@@ -235,8 +235,12 @@ with tab3:
     total_groups = math.ceil(total_pages / pages_per_group)
 
     # 현재 페이지와 그룹 초기화
-    if "page_number" not in st.session_state:
+    if (
+        "page_number" not in st.session_state
+        or st.session_state.search_term != search_term
+    ):
         st.session_state.page_number = 1
+        st.session_state.search_term = search_term
     if "group_number" not in st.session_state:
         st.session_state.group_number = 1
 
