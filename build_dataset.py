@@ -1,16 +1,26 @@
 from dataset import load_dataset
 from db import MySQLExecutor
 from typing import List
+from faq.runner import main
 
 
 def data_to_db(
     database: str, table_name: List[str], if_exists: str = "replace"
 ) -> None:
     mysql = MySQLExecutor(database)
-    car_info, faq = load_dataset(2)
-    mysql.df2sql(car_info, table_name[0], if_exists)
-    mysql.df2sql(faq, table_name[1], if_exists)
+    dataset = load_dataset()
+    mysql.df2sql(dataset, table_name, if_exists)
+
+
+def faq_to_db(database: str, table_name: str, if_exists: str = "replace") -> None:
+    df = main()
+    mysql = MySQLExecutor(database)
+    mysql.df2sql(df, table_name, if_exists)
+
+
+import pandas as pd
 
 
 if __name__ == "__main__":
-    data_to_db(database="encar", table_name=["car_info", "faq"])
+    data_to_db(database="encar", table_name="info")
+    faq_to_db(database="encar", table_name="faq")

@@ -6,6 +6,7 @@ import folium
 from folium.plugins import MarkerCluster
 from pygwalker.api.streamlit import StreamlitRenderer
 from streamlit_folium import st_folium
+import math
 
 from db import MySQLExecutor
 
@@ -53,7 +54,7 @@ if uploaded_file is not None or ft == "mysql":
         host = st.sidebar.text_input("HOST: ", "127.0.0.1")
         port = st.sidebar.text_input("PORT: ", "3306")
         table_name = st.sidebar.text_input("TABLE: ", "info")
-
+        table_name_faq = st.sidebar.text_input("TABLE: ", "faq")
         db_passwd = None
         db_passwd = st.sidebar.text_input("Enter DB password: ", "", type="password")
         while db_passwd is None:
@@ -90,18 +91,19 @@ if uploaded_file is not None or ft == "mysql":
                 db = MySQLExecutor(database_name, user, db_passwd, host, int(port))
                 res = db.read(table_name, 0)
                 data = pd.DataFrame(res)
+                res = db.read(table_name_faq, 0)
+                data_faq = pd.DataFrame(res)
                 data.set_index("index", inplace=True, drop=True)
-                faq_data = db.read("faq", 0)
-                faq_data = pd.DataFrame(faq_data)
-                faq_data.set_index("index", inplace=True, drop=True)
+                data_faq.set_index("index", inplace=True, drop=True)
             except Exception as e:
                 warn = "build dataset('$ python build_dataset.py') or check your db password"
                 st.warning(f"{warn}", icon="⚠️")
                 st.stop()
 
-        return data, faq_data
+        return data, data_faq
 
-    data, faq_data = load_data(file_path, ft, sh, h)
+    data, data_faq = load_data(file_path, ft, sh, h)
+
 with tab1:
 
     st.write("### 1. Dataset Preview ")
@@ -216,4 +218,74 @@ with tab2:
 
 with tab3:
     st.write("### FAQ")
-    st.dataframe(faq_data)
+
+    # 검색 기능 추가
+    search_term = st.text_input("검색", "")
+
+    # 질문 목록 필터링
+    filtered_data = data_faq[data_faq["질문"].str.contains(search_term, case=False)]
+
+    # 페이지네이션 설정
+    items_per_page = 5
+    total_items = len(filtered_data)
+    total_pages = math.ceil(total_items / items_per_page)
+
+    # 페이지 그룹 설정
+    pages_per_group = 10
+    total_groups = math.ceil(total_pages / pages_per_group)
+
+    # 현재 페이지와 그룹 초기화
+    if "page_number" not in st.session_state:
+        st.session_state.page_number = 1
+    if "group_number" not in st.session_state:
+        st.session_state.group_number = 1
+
+    # 페이지 번호 클릭 이벤트
+    def set_page(page):
+        st.session_state.page_number = page
+
+    # 페이지 그룹 변경 이벤트
+    def next_group():
+        if st.session_state.group_number < total_groups:
+            st.session_state.group_number += 1
+            st.session_state.page_number = (
+                st.session_state.group_number - 1
+            ) * pages_per_group + 1
+
+    def prev_group():
+        if st.session_state.group_number > 1:
+            st.session_state.group_number -= 1
+            st.session_state.page_number = (
+                st.session_state.group_number - 1
+            ) * pages_per_group + 1
+
+    # 현재 페이지와 그룹 번호 가져오기
+    page_number = st.session_state.page_number
+    group_number = st.session_state.group_number
+
+    # 페이지에 맞는 데이터 슬라이싱
+    start_index = (page_number - 1) * items_per_page
+    end_index = start_index + items_per_page
+    page_data = filtered_data.iloc[start_index:end_index]
+
+    # 질문 목록 표시
+    st.write(f"### {page_number} 페이지 질문 목록")
+    for index, row in page_data.iterrows():
+        with st.expander(row["질문"]):
+            st.write(row["답변"])
+
+    # 페이지 선택 버튼
+    st.write("### ")
+    cols = st.columns(pages_per_group + 2)
+
+    if group_number > 1:
+        cols[0].button("이전", on_click=prev_group)
+
+    start_page = (group_number - 1) * pages_per_group + 1
+    end_page = min(group_number * pages_per_group, total_pages)
+
+    for i, page in enumerate(range(start_page, end_page + 1)):
+        cols[i + 1].button(str(page), on_click=set_page, args=(page,))
+
+    if group_number < total_groups:
+        cols[-1].button("다음", on_click=next_group)
