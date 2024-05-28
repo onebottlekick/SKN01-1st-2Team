@@ -8,11 +8,11 @@ from db import MySQLExecutor
 
 
 st.set_page_config(page_title="Encar Data Analysis App", page_icon=None, layout="wide")
+tab1, tab2, tab3 = st.tabs(["Tab 1", "Tab 2", "Tab 3"])
 
 st.sidebar.write("****A) Select Data Loader****")
 
 ft = st.sidebar.selectbox("Data from: ", ["mysql", "Excel", "csv"])
-
 if ft != "mysql":
     uploaded_file = st.sidebar.file_uploader("*Upload file here*")
 else:
@@ -92,6 +92,7 @@ if uploaded_file is not None or ft == "mysql":
         return data
 
     data = load_data(file_path, ft, sh, h)
+with tab1:
 
     st.write("### 1. Dataset Preview ")
 
@@ -105,8 +106,11 @@ if uploaded_file is not None or ft == "mysql":
         sys.exit()
     st.write("### 2. High-Level Overview ")
 
-    selected = st.sidebar.radio(
+    st.sidebar.write(
         "**B) What would you like to know about the data?**",
+    )
+    selected = st.sidebar.radio(
+        "",
         [
             "Data Dimensions",
             "Field Descriptions",
@@ -145,14 +149,20 @@ if uploaded_file is not None or ft == "mysql":
     else:
         st.write("###### The data has the dimensions :", data.shape)
 
-    vis_select = st.sidebar.checkbox(
-        "**C) Is visualisation required for this dataset?**"
-    )
+    # vis_select = st.sidebar.checkbox(
+    #     "**C) Is visualisation required for this dataset?**"
+    # )
+    st.sidebar.write("****C) Click Visualize****")
+    vis_select = st.sidebar.button("Visualize")
 
     if vis_select:
 
         st.write("### 3. Visual Insights ")
         StreamlitRenderer(data).explorer()
 
+with tab2:
     # TODO map visualization
-    # st.write("### 4. Map")
+    st.write("### 4. Map")
+
+with tab3:
+    st.write("### FAQ")
