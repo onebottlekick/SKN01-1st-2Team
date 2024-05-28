@@ -24,7 +24,8 @@ class Dataset:
         self.get_data()
         car_info = pd.concat([*self.crawler.car_info])
         faq = self.crawler.faq
-        self.car_info = range(len(car_info.index))
+        car_info.index = range(len(car_info.index))
+        faq.index = range(len(faq.index))
         self._dataset = car_info, faq
 
     def get_data(self):

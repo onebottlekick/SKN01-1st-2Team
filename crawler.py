@@ -179,9 +179,7 @@ class Crawler:
                 ).click()
                 time.sleep(1)
                 try:
-                    for j in range(
-                        40
-                    ):  # 제목이나 사이트 등 더 추가하고 싶다면 여기서 추가 입력
+                    for j in range(40):
                         if j % 2 == 0:
                             time.sleep(1)
                             q_xpath = f"/html/body/div[1]/div[2]/div[1]/div/form/span/div/ul/li[{j+1}]"
