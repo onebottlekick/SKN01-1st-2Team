@@ -205,6 +205,7 @@ with tab2:
             ).add_to(marker_cluster)
     st_folium(m, width=700, height=500)
 
+    # html로 맵 저장해서 뿌려주기
     # m.save("map.html")
     # st.components.v1.html(open("map.html", "r").read(), height=500)
 
