@@ -58,6 +58,7 @@ class MySQLExecutor:
         Returns:
             sqlalchemy.Engine: The SQLAlchemy engine object for the MySQL database connection.
         """
+
         passwd = passwd if passwd is not None else getpass.getpass("Input password: ")
         connet_args = {
             "drivername": "mysql+pymysql",
@@ -91,12 +92,12 @@ class MySQLExecutor:
                 Otherwise, None is returned.
 
         """
+
         with self._engine.connect() as conn:
             res = conn.execute(text(query_sentence))
             conn.commit()
             if "select" in query_sentence.lower():
                 return res.fetchall()
-                # print(res.all())
 
     def df2sql(
         self,
@@ -116,6 +117,7 @@ class MySQLExecutor:
         Returns:
             None
         """
+
         assert isinstance(df, pd.DataFrame), f"df type should be {pd.DataFrame}"
         dtype = dtype if dtype else self._dtype_dict(df)
         df.to_sql(table_name, self._engine, if_exists=if_exists, dtype=dtype)
@@ -133,6 +135,7 @@ class MySQLExecutor:
             A dictionary mapping column names to SQLAlchemy data types.
 
         """
+
         d = {}
         for i, j in zip(df.columns, df.dtypes):
             if "object" in str(j):
@@ -157,6 +160,7 @@ class MySQLExecutor:
         port: int = 3306,
     ) -> None:
         """
+
         Creates a new database with the given parameters.
 
         Args:
