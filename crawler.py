@@ -18,6 +18,7 @@ class Crawler:
         """
         Initializes the Crawler class.
         """
+
         self.sleep = sleep
 
         self.chrome_options = webdriver.ChromeOptions()
@@ -42,6 +43,7 @@ class Crawler:
         Returns:
             str: The generated URL.
         """
+
         electrical = quote_plus("전기차")
         hybrid = quote_plus("하이브리드")
         p_hybrid = quote_plus("플러그인 하이브리드")
@@ -55,9 +57,13 @@ class Crawler:
         """
         Retrieves the HTML source code of the web page.
 
+        Args:
+            page (int): The page number to retrieve the source code from.
+
         Returns:
-            str: The HTML source code.
+            str: The HTML source code of the web page.
         """
+
         self.driver.maximize_window()
         self.driver.get(self._get_url(page))
         self.driver.implicitly_wait(self.sleep)
@@ -87,7 +93,19 @@ class Crawler:
         """
 
         def process_year(year):
+            """
+            Convert a string representing a year in the format 'yy/mm' to a datetime object.
+
+            Args:
+                year (str): A string representing a year in the format 'yy/mm'.
+
+            Returns:
+                datetime.datetime: A datetime object representing the converted year.
+
+            """
+
             year = datetime.datetime.strptime(year, "%y/%m")
+
             return year
 
         car_list = soup.find_all("div", {"class", f"{tag}"})
@@ -110,9 +128,10 @@ class Crawler:
             data = [name, year, km, f_type, city]
             print(data)
             dataset.append(data)
+
         return dataset
 
-    def process(self, soup) -> List[Any]:
+    def process(self, soup) -> pd.DataFrame:
         """
         Processes the car data from the HTML soup.
 
@@ -120,8 +139,9 @@ class Crawler:
             soup (BeautifulSoup): The BeautifulSoup object representing the HTML soup.
 
         Returns:
-            List: The processed car data as a List.
+            pd.DataFrame: The processed car data as a DataFrame.
         """
+
         try:
             big = self._process(
                 soup, "ItemBigImage_car__ovlrq", "ItemBigImage_name__h0biK"
@@ -137,6 +157,7 @@ class Crawler:
             )
             dataset = pd.concat([big, small], axis=0)
             dataset = dataset.index = range(len(dataset.index))
+
         except:
             small = self._process(
                 soup, "ItemSmallImage_txt_area__79qyK", "ItemSmallImage_name__6Fim0"
@@ -148,16 +169,14 @@ class Crawler:
 
         return dataset
 
-    def _get_next_page(self):
-        partP = self.driver.find_element(By.CSS_SELECTOR, ".part.page")
-        current_page = int(partP.find_element(By.CLASS_NAME, "current").text)
-        next_page_elements = partP.find_elements(By.TAG_NAME, "a")
+    def get_faq(self) -> pd.DataFrame:
+        """
+        Retrieves frequently asked questions (FAQ) from a website and stores them in a DataFrame.
 
-        if current_page < len(next_page_elements):
-            return next_page_elements[current_page]
-        return None
+        Returns:
+            pd.DataFrame: A DataFrame containing the questions and answers from the FAQ.
+        """
 
-    def get_faq(self):
         self.driver.get("http://www.encar.com/")
         time.sleep(2)
         self.driver.find_element(
@@ -231,8 +250,11 @@ class Crawler:
         Returns:
             dict: The dataset containing the car data.
         """
+
         return self._car_info
 
     @property
     def faq(self):
+        """Returns the FAQ (Frequently Asked Questions) of the crawler."""
+
         return self._faq

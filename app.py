@@ -168,7 +168,6 @@ with tab1:
         StreamlitRenderer(data).explorer()
 
 with tab2:
-    # TODO map visualization
     st.write("### 4. Map")
 
     m = folium.Map(location=[37.56693229959581, 126.97852771817074], zoom_start=7)
@@ -195,10 +194,8 @@ with tab2:
 
     region_counts = data["지역"].value_counts()
 
-    # 마커 클러스터 생성
     marker_cluster = folium.plugins.MarkerCluster().add_to(m)
 
-    # 각 지역에 등장 횟수 마커 추가
     for region, count in region_counts.items():
         if region in region_coords:
             folium.Marker(
@@ -213,32 +210,25 @@ with tab2:
 with tab3:
     st.write("### FAQ")
 
-    # 검색 기능 추가
     search_term = st.text_input("검색", "")
 
-    # 질문 목록 필터링
     filtered_data = data_faq[data_faq["질문"].str.contains(search_term, case=False)]
 
-    # 페이지네이션 설정
     items_per_page = 5
     total_items = len(filtered_data)
     total_pages = math.ceil(total_items / items_per_page)
 
-    # 페이지 그룹 설정
     pages_per_group = 10
     total_groups = math.ceil(total_pages / pages_per_group)
 
-    # 현재 페이지와 그룹 초기화
     if "page_number" not in st.session_state:
         st.session_state.page_number = 1
     if "group_number" not in st.session_state:
         st.session_state.group_number = 1
 
-    # 페이지 번호 클릭 이벤트
     def set_page(page):
         st.session_state.page_number = page
 
-    # 페이지 그룹 변경 이벤트
     def next_group():
         if st.session_state.group_number < total_groups:
             st.session_state.group_number += 1
@@ -253,22 +243,18 @@ with tab3:
                 st.session_state.group_number - 1
             ) * pages_per_group + 1
 
-    # 현재 페이지와 그룹 번호 가져오기
     page_number = st.session_state.page_number
     group_number = st.session_state.group_number
 
-    # 페이지에 맞는 데이터 슬라이싱
     start_index = (page_number - 1) * items_per_page
     end_index = start_index + items_per_page
     page_data = filtered_data.iloc[start_index:end_index]
 
-    # 질문 목록 표시
     st.write(f"### {page_number} 페이지 질문 목록")
     for index, row in page_data.iterrows():
         with st.expander(row["질문"]):
             st.write(row["답변"])
 
-    # 페이지 선택 버튼
     st.write("### ")
     cols = st.columns(pages_per_group + 2)
 
